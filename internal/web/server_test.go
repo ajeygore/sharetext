@@ -379,6 +379,10 @@ func TestLoginPageRenders(t *testing.T) {
 		"What Google shares with us",
 		"Encrypted before it leaves your device",
 		"/auth/google",
+		// Carried over from the pre-rewrite landing page; asserted so a future
+		// change cannot drop it silently the way the rewrite nearly did.
+		"Open source, and built to know nothing",
+		"github.com/ajeygore/sharetext",
 		"</html>",
 	} {
 		if !strings.Contains(body, want) {
@@ -397,6 +401,7 @@ func TestAppPageRenders(t *testing.T) {
 	}
 	for _, want := range []string{
 		"Share text", "Read shared text", "Your shares",
+		"Open source",
 		"ajey.gore@example.com",
 		">AG<", // initials fallback, since this session has no picture
 		"</html>",
@@ -417,5 +422,24 @@ func TestErrorMessageIsRendered(t *testing.T) {
 	body = do(srv, http.MethodGet, "/?error=<script>alert(1)</script>", "", nil).Body.String()
 	if strings.Contains(body, "<script>alert(1)</script>") {
 		t.Error("unknown error code was reflected into the page unescaped")
+	}
+}
+
+// The landing page previously advertised "React + TypeScript" and "Bun", which
+// the Go rewrite made false. Advertising the wrong stack on a security tool's
+// front page is a credibility problem, not a cosmetic one.
+func TestLandingStackIsAccurate(t *testing.T) {
+	srv, _ := newServer(t, "")
+	body := do(srv, http.MethodGet, "/", "", nil).Body.String()
+
+	for _, want := range []string{"Go", "HTML · Tailwind", "Redis", "AES-256-GCM"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("landing page does not mention %q", want)
+		}
+	}
+	for _, gone := range []string{"React", "Bun", "TypeScript", "Vite"} {
+		if strings.Contains(body, gone) {
+			t.Errorf("landing page still advertises %q, which this app no longer uses", gone)
+		}
 	}
 }

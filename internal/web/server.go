@@ -180,6 +180,7 @@ type pageData struct {
 	TTLs         []ttlOption
 	MaxViews     []int
 	Features     []feature
+	Stack        []string
 }
 
 type ttlOption struct {
@@ -189,6 +190,18 @@ type ttlOption struct {
 
 type feature struct {
 	Title, Body, Icon string
+}
+
+// Shown on the landing page. Kept beside the features rather than hardcoded in
+// the template so it is one edit when the stack changes — it previously said
+// React and Bun, which the Go rewrite made wrong.
+var landingStack = []string{
+	"Go",
+	"HTML · Tailwind",
+	"Web Crypto · AES-256-GCM",
+	"Redis",
+	"Google OAuth",
+	"Caddy · Let's Encrypt",
 }
 
 var landingFeatures = []feature{
@@ -221,6 +234,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		Google:   s.cfg.GoogleConfigured(),
 		DevLogin: s.cfg.AllowDevLogin,
 		Features: landingFeatures,
+		Stack:    landingStack,
 	}
 	if code := r.URL.Query().Get("error"); code != "" {
 		if msg, ok := authErrors[code]; ok {
