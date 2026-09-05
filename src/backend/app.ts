@@ -30,7 +30,10 @@ export function buildApp(basePath: string = BASE_PATH) {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "https://lh3.googleusercontent.com"],
+        // Google serves avatars from lh3-lh6 and rotates between them, so
+        // pinning a single host silently breaks profile pictures for some
+        // accounts and not others.
+        imgSrc: ["'self'", "data:", "https://*.googleusercontent.com"],
         connectSrc: ["'self'"],
         formAction: ["'self'"],
         frameAncestors: ["'none'"],

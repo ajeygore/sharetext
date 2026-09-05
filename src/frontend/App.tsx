@@ -5,6 +5,7 @@ import { Login } from "./components/Login";
 import { CreatePaste } from "./components/CreatePaste";
 import { RevealPaste } from "./components/RevealPaste";
 import { MyPastes } from "./components/MyPastes";
+import { Avatar } from "./components/Avatar";
 
 type Tab = "share" | "read" | "mine";
 
@@ -57,7 +58,7 @@ export function App() {
       <header className="topbar">
         <span className="brand small">ShareText</span>
         <div className="who">
-          {user.picture && <img src={user.picture} alt="" width={24} height={24} />}
+          <Avatar user={user} />
           <span className="email">{user.email}</span>
           <button className="btn link" onClick={signOut}>
             Sign out
