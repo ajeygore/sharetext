@@ -234,4 +234,6 @@ ShareText is open source precisely because "the server can't read your text" is 
 - **Run your own** — [Running it locally](#running-it-locally) gets you going with `docker compose up -d` and `bun run dev`; [Deployment](#deployment) covers a real host. Self-hosting means you also control the JavaScript that gets served, which closes the one gap end-to-end encryption in the browser can't close on its own (see [What this does not defend against](#what-this-does-not-defend-against)).
 - **Contribute** — issues and pull requests are welcome. Keep the [tests](#tests) green (`bun test`), and treat anything touching `crypto.ts` or the paste store as security-sensitive: explain the reasoning in the PR and add a test that would fail without your change.
 
-License: not yet declared — until a `LICENSE` file lands, treat this as "all rights reserved" and open an issue if you'd like to reuse it.
+## License
+
+[MIT](LICENSE) © 2026 Ajey Gore. Use it, fork it, run your own — just keep the copyright and licence notice.

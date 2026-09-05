@@ -1,6 +1,7 @@
 {
   "name": "sharetext",
   "version": "1.0.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "description": "End-to-end encrypted, view-limited one-time text sharing",
