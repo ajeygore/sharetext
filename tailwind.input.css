@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* The two button shapes the app reuses. Everything else is utilities in the
+   templates; these exist because they appear on nearly every screen. */
+@layer components {
+  .btn-primary {
+    @apply rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white
+           transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium
+           transition hover:border-indigo-500 dark:border-slate-700;
+  }
+  .tab {
+    @apply border-slate-200 text-slate-500 dark:border-slate-800 dark:text-slate-400;
+  }
+  .tab[aria-selected="true"] {
+    @apply border-indigo-600 bg-white font-medium text-slate-900
+           dark:bg-slate-900 dark:text-slate-100;
+  }
+}

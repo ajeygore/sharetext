@@ -1,5 +1,4 @@
-node_modules/
-dist/
+bin/
 .env
 .env.local
 *.log
