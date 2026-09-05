@@ -120,6 +120,31 @@ export function Login() {
         ))}
       </ul>
 
+      <section className="built">
+        <h2 className="built-title">Open source, and built to know nothing</h2>
+        <p className="built-lede">
+          ShareText is open source — audit the encryption, run your own, or open an issue. The key
+          is generated and used entirely in your browser, so there is no server-side path to your
+          plaintext to trust.{" "}
+          <a
+            className="built-link"
+            href="https://github.com/ajeygore/sharetext"
+            target="_blank"
+            rel="noreferrer"
+          >
+            github.com/ajeygore/sharetext&nbsp;↗
+          </a>
+        </p>
+        <ul className="stack">
+          <li>React + TypeScript</li>
+          <li>Web Crypto · AES-256-GCM</li>
+          <li>Bun</li>
+          <li>Redis</li>
+          <li>Google OAuth</li>
+          <li>Caddy · Let's Encrypt</li>
+        </ul>
+      </section>
+
       <p className="landing-foot">
         The encryption key never reaches the server — it travels only in the key you copy out. If
         you lose it, the text cannot be recovered by anyone, us included.

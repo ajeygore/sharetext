@@ -86,6 +86,15 @@ export function App() {
 
       <footer className="foot">
         Encrypted in your browser with AES-256-GCM. The server stores ciphertext only.
+        {" · "}
+        <a
+          className="foot-link"
+          href="https://github.com/ajeygore/sharetext"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open source
+        </a>
       </footer>
     </main>
   );

@@ -318,6 +318,29 @@ textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset:
   color: var(--muted);
 }
 
+.built {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.built-title { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+.built-lede { margin: 0 0 12px; font-size: 13px; line-height: 1.55; color: var(--muted); }
+.built-link { color: var(--accent); text-decoration: none; font-weight: 550; white-space: nowrap; }
+.built-link:hover { text-decoration: underline; }
+.stack { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; }
+.stack li {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
+.foot-link { color: var(--muted); text-decoration: underline; }
+.foot-link:hover { color: var(--ink); }
+
 .landing-foot {
   margin: 20px 0 0;
   padding-top: 18px;

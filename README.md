@@ -8,6 +8,21 @@ Runs at **[share.tnkrhaus.dev](https://share.tnkrhaus.dev)**, deployed by Ansibl
 
 ---
 
+## Tech stack
+
+| Layer | What | Why |
+|---|---|---|
+| Crypto | Web Crypto `crypto.subtle`, AES-256-GCM | Native, audited primitives; encryption happens client-side so the server never holds a key |
+| Frontend | React + TypeScript, built with Vite | Small SPA; the crypto is a ~50-line module (`src/frontend/crypto.ts`) |
+| Backend | [Bun](https://bun.sh) + TypeScript | One runtime for server and build; fast cold start under systemd |
+| Storage | Redis (dedicated instance, loopback-only) | Ciphertext with a native TTL and an atomic read counter — no separate GC |
+| Auth | Google OAuth 2.0 | Every create and read is attributable; no passwords stored |
+| Edge | Caddy + Let's Encrypt | Automatic TLS; a secure context is mandatory for `crypto.subtle` |
+
+Everything security-relevant lives in a few files: `src/frontend/crypto.ts` (browser encryption), `src/backend/` (the API and paste store). See [How it works](#how-it-works) for the data flow and [Security notes](#security-notes) for the threat model.
+
+---
+
 ## How it works
 
 ```
@@ -209,3 +224,14 @@ bun test          # needs `docker compose up -d`
 - `tests/crypto.test.ts` — round trips, unicode, 64 KB, wrong key, tampered ciphertext, checksum guard.
 - `tests/pasteStore.test.ts` — view counting, deletion at zero, TTLs, audit log, and the concurrency tests.
 - `tests/backend.test.ts` — auth, session tampering, payload validation, indistinguishable 404s, rate limiting, per-user scoping.
+
+---
+
+## Open source
+
+ShareText is open source precisely because "the server can't read your text" is a claim you should be able to verify rather than take on faith. Read the encryption for yourself in [`src/frontend/crypto.ts`](src/frontend/crypto.ts), run your own instance, or send a change.
+
+- **Run your own** — [Running it locally](#running-it-locally) gets you going with `docker compose up -d` and `bun run dev`; [Deployment](#deployment) covers a real host. Self-hosting means you also control the JavaScript that gets served, which closes the one gap end-to-end encryption in the browser can't close on its own (see [What this does not defend against](#what-this-does-not-defend-against)).
+- **Contribute** — issues and pull requests are welcome. Keep the [tests](#tests) green (`bun test`), and treat anything touching `crypto.ts` or the paste store as security-sensitive: explain the reasoning in the PR and add a test that would fail without your change.
+
+License: not yet declared — until a `LICENSE` file lands, treat this as "all rights reserved" and open an issue if you'd like to reuse it.
