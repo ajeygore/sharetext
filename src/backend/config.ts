@@ -2,8 +2,12 @@ import { randomBytes } from "node:crypto";
 
 export const PORT = parseInt(process.env.PORT || "3000", 10);
 
-/** Sub-path the app is mounted at. Production: smartlydone.ai/sharetext */
-export const BASE_PATH = (process.env.BASE_PATH ?? "/sharetext").replace(/\/$/, "");
+/**
+ * Sub-path the app is mounted at. Empty means it owns the domain root, which
+ * is the normal case (share.tnkrhaus.dev). Set it only when the app lives
+ * under a path on a shared domain, e.g. BASE_PATH=/sharetext.
+ */
+export const BASE_PATH = (process.env.BASE_PATH ?? "").replace(/\/$/, "");
 
 export const PUBLIC_ORIGIN = (process.env.PUBLIC_ORIGIN || `http://localhost:${PORT}`).replace(
   /\/$/,

@@ -4,7 +4,7 @@ Share a piece of text that can only be read a set number of times, then destroys
 
 Text is encrypted **in the browser**. The server stores ciphertext it has no way to read, counts down the remaining reads, and deletes the record when the budget runs out. Google sign-in is required to create and to read.
 
-Runs at `smartlydone.ai/sharetext`.
+Runs at **[share.tnkrhaus.dev](https://share.tnkrhaus.dev)**, deployed by Ansible from [`GetThrive/infra`](https://github.com/GetThrive/infra) onto the Thrive primary DNS box.
 
 ---
 
@@ -75,6 +75,8 @@ adds a local sign-in box that mints a session for any address you type. It is do
 
 `docker-compose.yml` publishes on **6380** because 6379 is so often already taken by another project's Redis. The app defaults to 6380 to match, so `docker compose up -d && bun test` works with no `.env` at all. Override with `REDIS_PORT` if you prefer.
 
+(In production the app gets its own Redis instance on 6381 — see *Deployment* below.)
+
 ---
 
 ## Configuration
@@ -82,7 +84,7 @@ adds a local sign-in box that mints a session for any address you type. It is do
 | Variable | Default | Notes |
 |---|---|---|
 | `PORT` | `3000` | |
-| `BASE_PATH` | `/sharetext` | Sub-path the app is mounted at |
+| `BASE_PATH` | empty | Empty means the app owns the domain root, which is the normal case. Set it (e.g. `/sharetext`) only to mount under a path on a shared domain. **Baked into the frontend bundle — rebuild after changing it.** |
 | `PUBLIC_ORIGIN` | `http://localhost:$PORT` | Public origin; also decides whether cookies are `Secure` |
 | `SESSION_SECRET` | — | **Required in production**, min 32 chars. `openssl rand -hex 32` |
 | `GOOGLE_CLIENT_ID` | — | |
@@ -95,37 +97,62 @@ adds a local sign-in box that mints a session for any address you type. It is do
 
 1. Google Cloud Console → **APIs & Services** → **Credentials** → **Create credentials** → **OAuth client ID** → **Web application**.
 2. Under *Authorized redirect URIs* add exactly `<PUBLIC_ORIGIN><BASE_PATH>/auth/google/callback`:
-   - production — `https://smartlydone.ai/sharetext/auth/google/callback`
-   - local — `http://localhost:3000/sharetext/auth/google/callback`
+   - production — `https://share.tnkrhaus.dev/auth/google/callback`
+   - local — `http://localhost:3000/auth/google/callback`
 3. Copy the client ID and secret into `.env`.
 
 The redirect URI must match character for character, trailing slash included, or Google returns `redirect_uri_mismatch`.
 
 ---
 
-## Deploying to smartlydone.ai/sharetext
+## Deployment
 
-```bash
-NODE_ENV=production \
-PUBLIC_ORIGIN=https://smartlydone.ai \
-BASE_PATH=/sharetext \
-SESSION_SECRET=$(openssl rand -hex 32) \
-bun run build && bun run start
-```
-
-Behind a reverse proxy, forward `/sharetext/*` to the app **without stripping the prefix** — the app owns its own mount point. For Caddy:
+Production lives on `thrive-dns01` (`dm.tnkrhaus.dev`, 65.21.181.220), the Thrive primary DNS box, beside `coredns_ui`. They share the box and Caddy and nothing else — separate user, separate Redis instance, separate port.
 
 ```
-smartlydone.ai {
+                    Caddy :443  (TLS, Let's Encrypt HTTP-01)
+                     │
+       ┌─────────────┴──────────────┐
+   dm.tnkrhaus.dev            share.tnkrhaus.dev
+   coredns_ui :3000           sharetext :3001
+       │                            │
+   Redis :6379                 Redis :6381
+   (authoritative DNS,         (paste ciphertext,
+    replicates to ns02)         loopback only, never replicated)
+```
+
+Deployed from [`GetThrive/infra`](https://github.com/GetThrive/infra):
+
+```sh
+make sharetext
+```
+
+That runs `ansible/playbooks/sharetext.yml`, which installs a pinned Bun, checks this repo out, installs dependencies, **runs `bun test` and aborts the deploy if it is red**, builds the frontend, writes the systemd unit, and verifies the public HTTPS endpoint answers before reporting success.
+
+### Why a separate Redis instance
+
+The DNS Redis on 6379 is the authoritative zone store and it replicates to `ns02` over the WireGuard tunnel. Paste ciphertext has no business riding that link, and a stray `FLUSHDB` from an app sharing the instance would take `tnkrhaus.dev` down with it. ShareText gets its own instance on 6381, bound to loopback, capped at 256 MB, `noeviction` — a paste evicted early would look exactly like data loss.
+
+### Sub-path hosting
+
+To mount under a path on a shared domain instead, set `BASE_PATH` for **both** the build and the server, and point the proxy at it without stripping the prefix:
+
+```sh
+BASE_PATH=/sharetext bun run build
+BASE_PATH=/sharetext PUBLIC_ORIGIN=https://example.com bun run start
+```
+
+```
+example.com {
   handle /sharetext/* {
     reverse_proxy localhost:3000
   }
 }
 ```
 
-**HTTPS is not optional.** `crypto.subtle` only exists in a secure context; over plain HTTP on a real hostname the browser does not expose it and no encryption is possible. The app detects this and refuses to run rather than pretending to work.
+Both mount modes are covered by the test suite, so the sub-path case is never exercised for the first time in production.
 
----
+**HTTPS is not optional.** `crypto.subtle` only exists in a secure context; over plain HTTP on a real hostname the browser does not expose it and no encryption is possible. The app detects this and refuses to run rather than pretending to work.
 
 ## API
 

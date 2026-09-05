@@ -1,14 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "bun:test";
 import { Hono } from "hono";
-import { app } from "../src/backend/index";
-import { BASE_PATH } from "../src/backend/config";
+import { buildApp } from "../src/backend/app";
 import { setSession } from "../src/backend/middleware/auth";
 import { redis, disconnectRedis, redisHealthy } from "../src/backend/services/redis";
 import { _flushForTests } from "../src/backend/services/pasteStore";
 import { MAX_CIPHERTEXT_CHARS, TTL_OPTIONS } from "../src/shared/types";
 
 const ORIGIN = "http://localhost:3000";
-const url = (p: string) => `${ORIGIN}${BASE_PATH}${p}`;
+
+// Production runs at a domain root (share.tnkrhaus.dev); the sub-path mode is
+// exercised separately in the "mounting" block below.
+const app = buildApp("");
+const url = (p: string) => `${ORIGIN}${p}`;
 
 /**
  * Mints a real session cookie by driving the app's own `setSession`, rather
@@ -60,16 +63,33 @@ beforeEach(async () => {
 });
 
 describe("mounting", () => {
-  it("serves the health check under the base path", async () => {
+  it("serves the health check at the domain root", async () => {
     const res = await app.request(url("/up"));
     expect(res.status).toBe(200);
     expect((await res.json()).redis).toBe(true);
   });
 
-  it("redirects the bare root to the app", async () => {
-    const res = await app.request(`${ORIGIN}/`);
-    expect(res.status).toBe(302);
-    expect(res.headers.get("location")).toBe(`${BASE_PATH}/`);
+  // The same build has to work under a path on a shared domain. Both modes are
+  // asserted here so the sub-path case is never exercised first in production.
+  describe("mounted under a sub-path", () => {
+    const sub = buildApp("/sharetext");
+
+    it("serves the health check under the base path", async () => {
+      const res = await sub.request(`${ORIGIN}/sharetext/up`);
+      expect(res.status).toBe(200);
+    });
+
+    it("redirects the bare root to the app", async () => {
+      const res = await sub.request(`${ORIGIN}/`);
+      expect(res.status).toBe(302);
+      expect(res.headers.get("location")).toBe("/sharetext/");
+    });
+
+    it("does not answer API routes at the domain root", async () => {
+      const res = await sub.request(`${ORIGIN}/api/me`);
+      // Falls through to the SPA catch-all rather than the API.
+      expect(res.status).not.toBe(401);
+    });
   });
 
   it("sets a restrictive CSP and no-referrer policy", async () => {
