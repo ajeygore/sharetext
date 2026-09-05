@@ -1,0 +1,114 @@
+{{template "head" .}}
+<main class="mx-auto max-w-2xl px-5 py-8" data-base="{{.BasePath}}">
+
+  <header class="mb-5 flex items-center justify-between gap-3">
+    <span class="font-semibold">ShareText</span>
+    <div class="flex min-w-0 items-center gap-2.5">
+      {{if .User.Picture}}
+        <img src="{{.User.Picture}}" alt="" width="26" height="26" referrerpolicy="no-referrer"
+             class="h-6.5 w-6.5 flex-none rounded-full bg-slate-200 object-cover"
+             onerror="this.replaceWith(document.getElementById('avatar-fallback').content.cloneNode(true))">
+      {{end}}
+      <template id="avatar-fallback"><span class="flex h-6.5 w-6.5 flex-none items-center justify-center rounded-full bg-indigo-600 text-[11px] font-semibold text-white">{{.Initials}}</span></template>
+      {{if not .User.Picture}}
+        <span class="flex h-6.5 w-6.5 flex-none items-center justify-center rounded-full bg-indigo-600 text-[11px] font-semibold text-white">{{.Initials}}</span>
+      {{end}}
+      <span class="truncate text-[13px] text-slate-500 dark:text-slate-400">{{.User.Email}}</span>
+      <button id="signout" class="flex-none text-[13px] text-slate-500 underline hover:text-slate-900 dark:hover:text-slate-100">Sign out</button>
+    </div>
+  </header>
+
+  <nav class="mb-4 flex gap-1" role="tablist">
+    <button role="tab" data-tab="share" class="tab flex-1 rounded-lg border px-3 py-2 text-sm">Share</button>
+    <button role="tab" data-tab="read"  class="tab flex-1 rounded-lg border px-3 py-2 text-sm">Read</button>
+    <button role="tab" data-tab="mine"  class="tab flex-1 rounded-lg border px-3 py-2 text-sm">Your shares</button>
+  </nav>
+
+  <div id="secure-warning" hidden class="mb-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+    Browser encryption is unavailable. ShareText requires a secure connection — open it over HTTPS or on localhost.
+  </div>
+
+  <!-- Share -->
+  <section data-panel="share" class="panel rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <form id="share-form">
+      <h2 class="mb-4 text-lg font-semibold">Share text</h2>
+      <label for="text" class="mb-1.5 block text-[13px] font-medium text-slate-500 dark:text-slate-400">Text to share</label>
+      <textarea id="text" rows="9" spellcheck="false" autocomplete="off" placeholder="Paste the text you want to share…"
+                class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950"></textarea>
+      <div id="counter" class="mt-1 text-right text-xs text-slate-500">0 / 65,536 bytes</div>
+
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        <div>
+          <label for="views" class="mb-1.5 block text-[13px] font-medium text-slate-500 dark:text-slate-400">Times it can be read</label>
+          <select id="views" class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950">
+            {{range .MaxViews}}<option value="{{.}}">{{.}}</option>{{end}}
+          </select>
+        </div>
+        <div>
+          <label for="ttl" class="mb-1.5 block text-[13px] font-medium text-slate-500 dark:text-slate-400">Expires after</label>
+          <select id="ttl" class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950">
+            {{range .TTLs}}<option value="{{.Seconds}}"{{if eq .Seconds 3600}} selected{{end}}>{{.Label}}</option>{{end}}
+          </select>
+        </div>
+      </div>
+
+      <div id="share-error" hidden class="mt-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"></div>
+      <button id="share-submit" type="submit" class="btn-primary mt-4 w-full">Share</button>
+      <p class="mt-3 text-[13px] text-slate-500 dark:text-slate-400">Encrypted on this device with AES-256-GCM. The key is never sent to the server.</p>
+    </form>
+
+    <div id="share-result" hidden>
+      <h2 class="mb-4 text-lg font-semibold">Your key is ready</h2>
+      <div class="mb-4 rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+        This key is shown <strong>once</strong>. Part of it never reaches our server, so if you lose it the text cannot be recovered by anyone — including us.
+      </div>
+      <label class="mb-1.5 block text-[13px] font-medium text-slate-500 dark:text-slate-400">Share key</label>
+      <code id="share-key" class="block select-all break-all rounded-lg border border-slate-300 bg-slate-50 p-3 font-mono text-[13px] leading-relaxed dark:border-slate-700 dark:bg-slate-950"></code>
+      <div class="mt-3.5 flex flex-wrap gap-2">
+        <button id="copy-key" class="btn-primary">Copy key</button>
+        <button id="share-again" class="btn-secondary">Share another</button>
+      </div>
+      <p id="share-meta" class="mt-3 text-[13px] text-slate-500 dark:text-slate-400"></p>
+      <p class="mt-2 text-[13px] text-slate-500 dark:text-slate-400">Send it through a channel you trust. Anyone with this key and a Google account can read the text.</p>
+    </div>
+  </section>
+
+  <!-- Read -->
+  <section data-panel="read" hidden class="panel rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <form id="reveal-form">
+      <h2 class="mb-4 text-lg font-semibold">Read shared text</h2>
+      <label for="key" class="mb-1.5 block text-[13px] font-medium text-slate-500 dark:text-slate-400">Share key</label>
+      <textarea id="key" rows="3" spellcheck="false" autocomplete="off" placeholder="Paste the key you were given…"
+                class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 font-mono text-[13px] dark:border-slate-700 dark:bg-slate-950"></textarea>
+      <div id="reveal-error" hidden class="mt-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"></div>
+      <button id="reveal-submit" type="submit" class="btn-primary mt-4 w-full">Reveal</button>
+      <p class="mt-3 text-[13px] text-slate-500 dark:text-slate-400">Reading uses up one of the text's remaining reads.</p>
+    </form>
+
+    <div id="reveal-result" hidden>
+      <h2 class="mb-4 text-lg font-semibold">Revealed</h2>
+      <pre id="revealed" class="max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-slate-300 bg-slate-50 p-3.5 font-mono text-[13px] dark:border-slate-700 dark:bg-slate-950"></pre>
+      <div class="mt-3.5 flex flex-wrap gap-2">
+        <button id="copy-text" class="btn-primary">Copy text</button>
+        <button id="read-again" class="btn-secondary">Read another</button>
+      </div>
+      <p id="reveal-meta" class="mt-3 text-[13px]"></p>
+    </div>
+  </section>
+
+  <!-- Your shares -->
+  <section data-panel="mine" hidden class="panel rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="mb-2 text-lg font-semibold">Your shares</h2>
+    <p class="text-[13px] text-slate-500 dark:text-slate-400">Only who read each item and how many reads are left. The text itself is not recoverable from here — we never had the key.</p>
+    <div id="mine-list" class="mt-4 text-sm text-slate-500">Loading…</div>
+  </section>
+
+  <footer class="mt-7 text-center text-xs text-slate-500 dark:text-slate-500">
+    Encrypted in your browser with AES-256-GCM. The server stores ciphertext only.
+    ·
+    <a class="underline hover:text-slate-900 dark:hover:text-slate-100"
+       href="https://github.com/ajeygore/sharetext" target="_blank" rel="noreferrer">Open source</a>
+  </footer>
+</main>
+<script type="module" src="{{.BasePath}}/static/js/app.mjs"></script>
+{{template "foot" .}}
