@@ -100,6 +100,12 @@ func (c Config) RedirectURI() string {
 	return c.PublicOrigin + c.BasePath + "/auth/google/callback"
 }
 
+// AppURL is where this instance is reachable. The share message a creator
+// pastes into chat advertises it, so it must come from the running server —
+// hardcoding it would make every self-hosted instance send its users to
+// somebody else's.
+func (c Config) AppURL() string { return c.PublicOrigin + c.BasePath }
+
 // CookiePath scopes cookies to the mount point so they are not sent to other
 // apps sharing the domain.
 func (c Config) CookiePath() string {

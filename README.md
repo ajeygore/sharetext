@@ -42,7 +42,26 @@ share key = <uuid>.<secret>.<checksum>          browser: decrypt locally with se
                    ^^^^^^ server never sees
 ```
 
-The **share key** is one string:
+After creating a paste the creator is shown a **ready-to-send message**, not a
+bare key — pasted into WhatsApp or email, a lone hundred-character string tells
+the recipient nothing:
+
+```
+Go to https://share.tnkrhaus.dev, sign in with Google, and enter this key:
+
+<key>
+
+Readable 2 times · expires 6 Sep 2026, 19:30
+Once the reads run out it is deleted, and the key is the only way to open it.
+```
+
+The URL is derived from `PUBLIC_ORIGIN` + `BASE_PATH`, never hardcoded, so a
+self-hosted or sub-path instance advertises its own address. The key sits alone
+on its own line and unquoted: quotes and trailing punctuation get copied with
+it and then fail to parse, and a dedicated line survives the wrapping messaging
+apps apply.
+
+The **share key** itself is one string:
 
 | Part | | Goes to the server? |
 |---|---|---|
