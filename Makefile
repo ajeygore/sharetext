@@ -41,8 +41,10 @@ test-go: ## Go tests (needs Redis: docker compose up -d)
 
 # The browser crypto is the one thing that cannot be Go, so it is the one thing
 # tested with node. Zero dependencies: node:test plus the WebCrypto globals.
-test-js: ## Browser crypto tests
-	node --test test/crypto.test.mjs
+# Globbed, not named one by one: a test file that nobody remembered to add to
+# this line is a test file that never runs.
+test-js: ## Browser-side tests (crypto, share message)
+	node --test test/*.test.mjs
 
 run: build ## Build and run
 	./bin/sharetext

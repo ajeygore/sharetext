@@ -52,3 +52,20 @@ func TestGoogleConfigured(t *testing.T) {
 		t.Error("complete credentials reported as unconfigured")
 	}
 }
+
+func TestAppURL(t *testing.T) {
+	// The share message advertises this address. A self-hosted or sub-path
+	// instance must produce its own, or it sends people to another server.
+	for _, tc := range []struct{ origin, base, want string }{
+		{"https://share.tnkrhaus.dev", "", "https://share.tnkrhaus.dev"},
+		{"https://share.tnkrhaus.dev/", "", "https://share.tnkrhaus.dev"},
+		{"https://example.com", "/sharetext", "https://example.com/sharetext"},
+		{"https://example.com/", "/sharetext/", "https://example.com/sharetext"},
+		{"http://localhost:3000", "", "http://localhost:3000"},
+	} {
+		c := Config{PublicOrigin: tc.origin, BasePath: tc.base}.normalise()
+		if got := c.AppURL(); got != tc.want {
+			t.Errorf("origin=%q base=%q -> %q, want %q", tc.origin, tc.base, got, tc.want)
+		}
+	}
+}

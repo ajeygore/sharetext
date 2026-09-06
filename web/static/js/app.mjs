@@ -13,9 +13,13 @@ import {
   encodeShareKey,
   parseShareKey,
 } from "./crypto.mjs";
+import { composeShareMessage } from "./message.mjs";
 
 const root = document.querySelector("main");
 const BASE = root.dataset.base ?? "";
+// Where this instance is reachable, from the server. Never hardcoded: a
+// self-hosted or sub-path deployment must advertise its own address.
+const APP_URL = root.dataset.appUrl ?? "";
 const MAX_BYTES = 64 * 1024;
 
 const $ = (id) => document.getElementById(id);
@@ -93,9 +97,14 @@ $("share-form").addEventListener("submit", async (e) => {
       }),
     });
 
-    $("share-key").textContent = await encodeShareKey(res.id, key);
-    $("share-meta").textContent =
-      `Readable ${res.max_views} ${res.max_views === 1 ? "time" : "times"} · expires ${new Date(res.expires_at).toLocaleString()}`;
+    const shareKey = await encodeShareKey(res.id, key);
+    $("share-key").textContent = shareKey;
+    $("share-message").textContent = composeShareMessage({
+      appURL: APP_URL,
+      shareKey,
+      maxViews: res.max_views,
+      expiresAt: res.expires_at,
+    });
     text.value = "";
     text.dispatchEvent(new Event("input"));
     show($("share-form"), false);
@@ -164,7 +173,8 @@ $("read-again").addEventListener("click", () => {
 // ---------- copy ----------
 
 for (const [buttonId, sourceId, label] of [
-  ["copy-key", "share-key", "Copy key"],
+  ["copy-message", "share-message", "Copy"],
+  ["copy-key", "share-key", "Copy the key only"],
   ["copy-text", "revealed", "Copy text"],
 ]) {
   $(buttonId).addEventListener("click", async (e) => {

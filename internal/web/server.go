@@ -172,6 +172,7 @@ func (s *Server) url(suffix string) string {
 
 type pageData struct {
 	BasePath     string
+	AppURL       string
 	User         *session.User
 	Google       bool
 	DevLogin     bool
@@ -231,6 +232,7 @@ var authErrors = map[string]string{
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	data := pageData{
 		BasePath: s.cfg.BasePath,
+		AppURL:   s.cfg.AppURL(),
 		Google:   s.cfg.GoogleConfigured(),
 		DevLogin: s.cfg.AllowDevLogin,
 		Features: landingFeatures,

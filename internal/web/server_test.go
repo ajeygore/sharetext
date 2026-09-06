@@ -12,6 +12,7 @@ import (
 	"github.com/ajeygore/sharetext/internal/config"
 	"github.com/ajeygore/sharetext/internal/session"
 	"github.com/ajeygore/sharetext/internal/store"
+	"github.com/ajeygore/sharetext/web"
 )
 
 const testSecret = "0123456789abcdef0123456789abcdef"
@@ -440,6 +441,68 @@ func TestLandingStackIsAccurate(t *testing.T) {
 	for _, gone := range []string{"React", "Bun", "TypeScript", "Vite"} {
 		if strings.Contains(body, gone) {
 			t.Errorf("landing page still advertises %q, which this app no longer uses", gone)
+		}
+	}
+}
+
+// The share message is composed in the browser but its URL comes from the
+// server, so the page has to carry it. Hardcoding it in the JS would send
+// every self-hosted instance's users to share.tnkrhaus.dev.
+func TestAppPageCarriesTheAppURL(t *testing.T) {
+	srv, _ := newServer(t, "")
+	body := do(srv, http.MethodGet, "/", "", signedIn(t, "a@example.com")).Body.String()
+	if !strings.Contains(body, `data-app-url="http://localhost:3000"`) {
+		t.Errorf("app page does not carry the app URL for the share message:\n%s", body[:600])
+	}
+}
+
+func TestAppURLIncludesBasePath(t *testing.T) {
+	srv, _ := newServer(t, "/sharetext")
+	body := do(srv, http.MethodGet, "/sharetext/", "", signedIn(t, "a@example.com")).Body.String()
+	if !strings.Contains(body, `data-app-url="http://localhost:3000/sharetext"`) {
+		t.Errorf("sub-path deployment advertises the wrong URL")
+	}
+}
+
+// Nothing may hardcode the production hostname — that is what makes a
+// self-hosted instance send its users to somebody else's server.
+func TestNoHardcodedProductionHostInAssets(t *testing.T) {
+	for _, name := range []string{
+		"static/js/message.mjs", "static/js/app.mjs", "static/js/crypto.mjs",
+		"templates/app.html",
+	} {
+		b, err := web.Static.ReadFile(name)
+		if err != nil {
+			if b, err = web.Templates.ReadFile(name); err != nil {
+				t.Fatalf("read %s: %v", name, err)
+			}
+		}
+		if strings.Contains(string(b), "share.tnkrhaus.dev") {
+			t.Errorf("%s hardcodes the production hostname", name)
+		}
+	}
+}
+
+// A copy button bound to a mistyped element id fails silently — the click does
+// nothing and nobody notices until someone pastes an empty message. Assert the
+// ids the script reaches for actually exist on the page.
+func TestShareMessageElementsExist(t *testing.T) {
+	srv, _ := newServer(t, "")
+	body := do(srv, http.MethodGet, "/", "", signedIn(t, "a@example.com")).Body.String()
+
+	for _, id := range []string{`id="share-message"`, `id="copy-message"`, `id="share-key"`} {
+		if !strings.Contains(body, id) {
+			t.Errorf("app page is missing %s", id)
+		}
+	}
+
+	script, err := web.Static.ReadFile("static/js/app.mjs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, ref := range []string{`"copy-message", "share-message"`, "composeShareMessage"} {
+		if !strings.Contains(string(script), ref) {
+			t.Errorf("app.mjs does not reference %s", ref)
 		}
 	}
 }

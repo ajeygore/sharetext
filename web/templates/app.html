@@ -1,5 +1,5 @@
 {{template "head" .}}
-<main class="mx-auto max-w-2xl px-5 py-8" data-base="{{.BasePath}}">
+<main class="mx-auto max-w-2xl px-5 py-8" data-base="{{.BasePath}}" data-app-url="{{.AppURL}}">
 
   <header class="mb-5 flex items-center justify-between gap-3">
     <span class="font-semibold">ShareText</span>
@@ -62,14 +62,20 @@
       <div class="mb-4 rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
         This key is shown <strong>once</strong>. Part of it never reaches our server, so if you lose it the text cannot be recovered by anyone — including us.
       </div>
-      <label class="mb-1.5 block text-[13px] font-medium text-slate-500 dark:text-slate-400">Share key</label>
-      <code id="share-key" class="block select-all break-all rounded-lg border border-slate-300 bg-slate-50 p-3 font-mono text-[13px] leading-relaxed dark:border-slate-700 dark:bg-slate-950"></code>
+      <label class="mb-1.5 block text-[13px] font-medium text-slate-500 dark:text-slate-400">
+        Message to send — copy this and paste it into email, WhatsApp or chat
+      </label>
+      <div class="flex items-start gap-2">
+        <pre id="share-message" class="min-w-0 flex-1 select-all whitespace-pre-wrap break-all rounded-lg border border-slate-300 bg-slate-50 p-3 font-mono text-[13px] leading-relaxed dark:border-slate-700 dark:bg-slate-950"></pre>
+        <button id="copy-message" class="btn-primary flex-none">Copy</button>
+      </div>
+
       <div class="mt-3.5 flex flex-wrap gap-2">
-        <button id="copy-key" class="btn-primary">Copy key</button>
+        <button id="copy-key" class="btn-secondary">Copy the key only</button>
         <button id="share-again" class="btn-secondary">Share another</button>
       </div>
-      <p id="share-meta" class="mt-3 text-[13px] text-slate-500 dark:text-slate-400"></p>
-      <p class="mt-2 text-[13px] text-slate-500 dark:text-slate-400">Send it through a channel you trust. Anyone with this key and a Google account can read the text.</p>
+      <code id="share-key" hidden></code>
+      <p class="mt-3 text-[13px] text-slate-500 dark:text-slate-400">Send it through a channel you trust. Anyone with this key and a Google account can read the text.</p>
     </div>
   </section>
 
